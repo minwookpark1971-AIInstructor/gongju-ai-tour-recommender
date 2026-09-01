@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}인기 코스 · AI 관광 추천{% endblock %}
+
+{% block content %}
+<h1>최근 {{ days }}일 인기</h1>
+<p class="lead">
+  지금까지 만들어진 추천 코스 <b>{{ course_count }}건</b>을 모아 본 결과입니다.
+  추천을 받을수록 이 화면이 채워집니다.
+</p>
+
+<div class="filter">
+  {% for d in [1, 7, 30] %}
+  <a class="chip-link {% if days == d %}on{% endif %}"
+     href="{{ url_for('popular', days=d) }}">최근 {{ d }}일</a>
+  {% endfor %}
+</div>
+
+{% if not ranked %}
+<div class="card">
+  <p class="muted">아직 만들어진 코스가 없습니다.</p>
+  <p><a class="link-back" href="{{ url_for('index') }}">추천을 한 번 받아 보세요 →</a></p>
+</div>
+{% else %}
+
+<div class="card">
+  <h3>코스에 가장 많이 담긴 관광지</h3>
+  {% for spot, pct in ranked %}
+  <div class="bar-row">
+    <span class="bar-label wide">
+      <a href="{{ url_for('spot_detail', spot_id=spot.id) }}">{{ spot.name }}</a>
+    </span>
+    <span class="bar"><span class="bar-fill" style="width: {{ pct }}%"></span></span>
+    <span class="bar-value">{{ spot.pick_count }}회</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h3>많이 나온 코스 조합</h3>
+  <table>
+    <tr><th>순위</th><th>코스</th><th>횟수</th><th>평균 점수</th></tr>
+    {% for c in courses %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ c.names | join(' → ') }}</td>
+      <td>{{ c.cnt }}회</td>
+      <td>{{ c.avg }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endif %}
+{% endblock %}

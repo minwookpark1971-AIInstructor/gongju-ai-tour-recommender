@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}취향 입력 · AI 관광 추천{% endblock %}
+
+{% block content %}
+<h1>내 취향에 맞는 공주 여행 코스 찾기</h1>
+<p class="lead">
+  아래 항목을 채우면 공주시 관광지 30곳 중에서 나에게 맞는 코스를 3~5곳 골라 드립니다.
+</p>
+
+<form method="post" action="{{ url_for('recommend') }}" class="card">
+
+  <label class="field">
+    <span class="label">닉네임</span>
+    <input type="text" name="nickname" placeholder="예: 민수" maxlength="20">
+  </label>
+
+  <div class="field">
+    <span class="label">연령대</span>
+    <div class="chips">
+      {% for a in age_groups %}
+      <label class="chip">
+        <input type="radio" name="age_group" value="{{ a }}" {% if loop.first %}checked{% endif %}>
+        <span>{{ a }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">성별</span>
+    <div class="chips">
+      {% for g in genders %}
+      <label class="chip">
+        <input type="radio" name="gender" value="{{ g }}" {% if loop.last %}checked{% endif %}>
+        <span>{{ g }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">누구와 가나요?</span>
+    <div class="chips">
+      {% for c in companions %}
+      <label class="chip">
+        <input type="radio" name="companion" value="{{ c }}" {% if loop.first %}checked{% endif %}>
+        <span>{{ c }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">좋아하는 테마에 점수를 주세요 <em>(0점 = 관심 없음, 5점 = 아주 좋아함)</em></span>
+    <div class="theme-grid">
+      {% for t in themes %}
+      <div class="theme-row">
+        <span class="theme-name">{{ t }}</span>
+        <div class="score-chips">
+          {% for n in range(6) %}
+          <label class="score">
+            <input type="radio" name="theme_{{ t }}" value="{{ n }}" {% if n == 3 %}checked{% endif %}>
+            <span>{{ n }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">여행에 쓸 시간</span>
+    <div class="chips">
+      {% for h in hours %}
+      <label class="chip">
+        <input type="radio" name="hours" value="{{ h }}" {% if loop.first %}checked{% endif %}>
+        <span>{{ h }}시간 ({{ {3:3, 6:4, 9:5}[h] }}곳)</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <input type="hidden" name="w_content" value="0.6">
+
+  <!-- 확장과제(심화). 손대지 않으면 기본 추천과 똑같이 동작한다. -->
+  <details class="extra">
+    <summary>심화 설정 (확장과제)</summary>
+
+    <div class="field">
+      <span class="label">오늘 날씨 <em>비·더움·추움이면 실내 관광지를 밀어 줍니다</em></span>
+      <div class="chips">
+        {% for w in weathers %}
+        <label class="chip">
+          <input type="radio" name="weather" value="{{ w }}" {% if loop.first %}checked{% endif %}>
+          <span>{{ w }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label">1인 예산 상한 <em>코스 비용 합계를 넘지 않게 고릅니다</em></span>
+      <div class="chips">
+        {% for label, value in budgets %}
+        <label class="chip">
+          <input type="radio" name="max_cost" value="{{ value }}" {% if loop.first %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="chip">
+        <input type="checkbox" name="real_distance">
+        <span>이동시간을 실제 거리로 계산</span>
+      </label>
+      <p class="hint">끄면 20분 고정. 켜면 관광지 좌표로 거리를 재서 계산합니다.</p>
+    </div>
+  </details>
+
+  <button type="submit" class="btn-primary">추천받기</button>
+</form>
+{% endblock %}

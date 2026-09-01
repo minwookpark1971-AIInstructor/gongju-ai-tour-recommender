@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}데이터 분석 · AI 관광 추천{% endblock %}
+
+{% block content %}
+<h1>데이터 분석 대시보드</h1>
+
+<div class="summary card">
+  <div class="sum-item"><b>{{ total_spots }}</b><span>관광지</span></div>
+  <div class="sum-item"><b>{{ total_users }}</b><span>이용자</span></div>
+  <div class="sum-item"><b>{{ total_ratings }}</b><span>평점</span></div>
+</div>
+
+<div class="card">
+  <h3>1. 테마별 관광지 수</h3>
+  <p class="hint">관광지 하나가 테마를 여러 개 가질 수 있어서 합계는 30을 넘습니다.</p>
+  {% for name, count, pct in theme_bars %}
+  <div class="bar-row">
+    <span class="bar-label">{{ name }}</span>
+    <span class="bar"><span class="bar-fill" style="width: {{ pct }}%"></span></span>
+    <span class="bar-value">{{ count }}곳</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h3>2. 연령대별 선호 테마 TOP3</h3>
+  <p class="hint">이용자들이 매긴 테마 점수(0~5)의 평균입니다.</p>
+  <table>
+    <tr><th>연령대</th><th>1위</th><th>2위</th><th>3위</th></tr>
+    {% for age, items in age_top.items() %}
+    <tr>
+      <td><b>{{ age }}</b></td>
+      {% for theme, weight in items %}
+      <td>{{ theme }} <span class="muted">{{ weight }}점</span></td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h3>3. 평균 평점 상위 10곳</h3>
+  <table>
+    <tr><th>순위</th><th>관광지</th><th>테마</th><th>평균</th><th>평점 수</th></tr>
+    {% for r in top_rated %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><b>{{ r.name }}</b></td>
+      <td class="muted">{{ r.themes }}</td>
+      <td>{{ r.avg }}점</td>
+      <td>{{ r.cnt }}명</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

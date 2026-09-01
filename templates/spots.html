@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}관광지 목록 · AI 관광 추천{% endblock %}
+
+{% block content %}
+<h1>공주 관광지 {{ spots|length }}곳</h1>
+
+<div class="filter">
+  <a class="chip-link {% if not current %}on{% endif %}" href="{{ url_for('spots') }}">전체</a>
+  {% for t in themes %}
+  <a class="chip-link {% if current == t %}on{% endif %}"
+     href="{{ url_for('spots', theme=t) }}">{{ t }}</a>
+  {% endfor %}
+</div>
+
+<div class="grid">
+  {% for s in spots %}
+  <div class="card grid-card">
+    <h3><a href="{{ url_for('spot_detail', spot_id=s.id) }}">{{ s.name }}</a></h3>
+    <p class="meta">
+      {{ s.region }} · {{ s.duration_min }}분 ·
+      {% if s.cost %}{{ "{:,}".format(s.cost) }}원{% else %}무료{% endif %}
+    </p>
+    <p class="tags">
+      {% for t in s.themes.split(',') %}<span class="tag">{{ t }}</span>{% endfor %}
+    </p>
+    <p class="desc">{{ s.description }}</p>
+    <p class="rating">
+      {% if s.avg %}평균 {{ s.avg }}점 ({{ s.cnt }}명)
+      {% else %}<span class="muted">아직 평점 없음</span>{% endif %}
+    </p>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not spots %}
+<p class="muted">해당 테마의 관광지가 없습니다.</p>
+{% endif %}
+{% endblock %}

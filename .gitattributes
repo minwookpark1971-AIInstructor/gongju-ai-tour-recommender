@@ -1,0 +1,8 @@
+# 기본: 텍스트는 저장소에 LF로 보관
+* text=auto eol=lf
+
+# SQLite 파일은 절대 줄바꿈 변환을 하면 안 된다 (파일이 깨진다)
+*.db binary
+
+# 윈도우에서 실행하는 배치 파일은 CRLF 유지
+*.bat text eol=crlf

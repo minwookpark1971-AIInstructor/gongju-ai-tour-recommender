@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}추천 결과 · AI 관광 추천{% endblock %}
+
+{% block content %}
+<h1>{{ user.nickname }}님을 위한 {{ hours }}시간 코스</h1>
+
+<div class="summary card">
+  <div class="sum-item"><b>{{ summary.count }}곳</b><span>추천 장소</span></div>
+  <div class="sum-item"><b>{{ summary.visit_minutes }}분</b><span>관광 시간</span></div>
+  <div class="sum-item"><b>{{ summary.travel_minutes }}분</b><span>이동 시간</span></div>
+  <div class="sum-item"><b>{{ summary.total_minutes // 60 }}시간 {{ summary.total_minutes % 60 }}분</b><span>총 소요</span></div>
+  <div class="sum-item"><b>{{ "{:,}".format(summary.total_cost) }}원</b><span>예상 비용</span></div>
+</div>
+
+{% if summary.over_budget %}
+<p class="badge-warn">
+  조건에 맞는 곳이 부족해 최소 3곳을 채웠습니다.
+  관광 시간이 예산({{ summary.budget_minutes }}분)보다
+  {{ summary.visit_minutes - summary.budget_minutes }}분 초과합니다.
+</p>
+{% endif %}
+
+{% if summary.weather or summary.max_cost or summary.real_distance %}
+<p class="badge-info">
+  심화 설정 적용:
+  {% if summary.weather %}<b>{{ summary.weather }}</b> 날씨라 실내 관광지에 가산점{% endif %}
+  {% if summary.max_cost %}{% if summary.weather %} · {% endif %}예산 <b>{{ "{:,}".format(summary.max_cost) }}원</b> 이내{% endif %}
+  {% if summary.real_distance %}{% if summary.weather or summary.max_cost %} · {% endif %}이동시간을 <b>실제 거리</b>로 계산{% endif %}
+</p>
+{% endif %}
+
+<!-- [확장 3] 지도 API 없이 좌표를 SVG 점으로 찍어 코스 순서를 보여준다 -->
+{% if map_route %}
+<div class="card">
+  <h3>코스 지도</h3>
+  <p class="hint">
+    번호는 아래 코스 순서와 같습니다. 회색 점은 근처의 다른 관광지입니다.
+    실제 지도가 아니라 좌표로 위치 관계만 그린 그림이고,
+    너무 가까이 붙은 곳은 번호가 보이도록 조금 벌려 놓았습니다.
+  </p>
+  <svg class="map" viewBox="0 0 480 420" role="img" aria-label="추천 코스 위치도">
+    {% for p in map_bg %}
+    <circle cx="{{ p.x }}" cy="{{ p.y }}" r="3.5" fill="#cdc9bf"></circle>
+    {% endfor %}
+    <polyline points="{% for p in map_route %}{{ p.x }},{{ p.y }} {% endfor %}"
+              fill="none" stroke="#d98324" stroke-width="2.5"
+              stroke-dasharray="6 4" stroke-linejoin="round"></polyline>
+    {% for p in map_route %}
+    <circle cx="{{ p.x }}" cy="{{ p.y }}" r="13" fill="#2f6f5e"
+            stroke="#f6f5f1" stroke-width="2"></circle>
+    <text x="{{ p.x }}" y="{{ p.y + 4.5 }}" text-anchor="middle"
+          fill="#ffffff" font-size="13" font-weight="bold">{{ p.order }}</text>
+    <title>{{ p.order }}. {{ p.name }}</title>
+    {% endfor %}
+  </svg>
+</div>
+{% endif %}
+
+<ol class="course">
+  {% for c in course %}
+  <li class="card spot-card">
+    <div class="order">{{ c.order }}</div>
+    <div class="body">
+      <h3><a href="{{ url_for('spot_detail', spot_id=c.spot.id) }}">{{ c.spot.name }}</a></h3>
+      <p class="meta">
+        {{ c.spot.region }} ·
+        {% for t in c.spot.themes.split(',') %}<span class="tag">{{ t }}</span>{% endfor %} ·
+        {{ c.spot.duration_min }}분 ·
+        {% if c.spot.cost %}{{ "{:,}".format(c.spot.cost) }}원{% else %}무료{% endif %} ·
+        {{ "실내" if c.spot.indoor else "실외" }}
+      </p>
+      <p class="desc">{{ c.spot.description }}</p>
+      <p class="reason">{{ c.reason }}</p>
+      <div class="scores">
+        <span class="score-pill">최종 {{ "%.3f"|format(c.score) }}</span>
+        <span class="score-sub">취향 {{ "%.3f"|format(c.content) }}</span>
+        <span class="score-sub">평점 {{ "%.3f"|format(c.collab) }}</span>
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+
+<!--
+  가중치를 바꿔서 다시 추천받는 폼.
+  자바스크립트를 쓰지 않고, 이전에 입력한 값을 hidden으로 다시 실어 보낸다.
+-->
+<form method="post" action="{{ url_for('recommend') }}" class="card weight-form">
+  <h3>추천 방식 바꿔보기</h3>
+  <p class="hint">
+    값을 키우면 <b>내 취향</b>을, 줄이면 <b>다른 사람 평점</b>을 더 많이 반영합니다.
+    바꿔서 다시 추천받으면 순서가 어떻게 달라지는지 확인해 보세요.
+  </p>
+
+  <input type="hidden" name="nickname" value="{{ user.nickname }}">
+  <input type="hidden" name="age_group" value="{{ user.age_group }}">
+  <input type="hidden" name="gender" value="{{ gender }}">
+  <input type="hidden" name="companion" value="{{ user.companion }}">
+  <input type="hidden" name="hours" value="{{ hours }}">
+  {% for t in themes %}
+  <input type="hidden" name="theme_{{ t }}" value="{{ preferences[t] }}">
+  {% endfor %}
+  <!-- 심화 설정도 그대로 다시 실어 보낸다 -->
+  <input type="hidden" name="weather" value="{{ weather }}">
+  <input type="hidden" name="max_cost" value="{{ max_cost }}">
+  {% if real_distance %}<input type="hidden" name="real_distance" value="on">{% endif %}
+
+  <div class="slider-row">
+    <span>평점 중시</span>
+    <input type="range" name="w_content" min="0" max="1" step="0.1" value="{{ w_content }}">
+    <span>취향 중시</span>
+  </div>
+  <p class="hint">현재 설정: 취향 {{ (w_content * 100)|round|int }}% + 평점 {{ ((1 - w_content) * 100)|round|int }}%</p>
+
+  <button type="submit" class="btn-primary">이 설정으로 다시 추천</button>
+</form>
+
+<p><a class="link-back" href="{{ url_for('index') }}">처음부터 다시 입력하기</a></p>
+{% endblock %}

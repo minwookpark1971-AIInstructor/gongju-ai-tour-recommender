@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI 관광 추천 서비스{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="logo" href="{{ url_for('index') }}">공주 AI 관광 추천</a>
+      <nav>
+        <a href="{{ url_for('stats') }}">데이터 분석</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="wrap">
+      충청남도 공주시 관광지 30곳 · 경영정보 전공 실습 프로젝트
+    </div>
+  </footer>
+</body>
+</html>
