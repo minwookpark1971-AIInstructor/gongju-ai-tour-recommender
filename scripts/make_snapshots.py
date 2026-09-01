@@ -14,7 +14,9 @@ step2_done ~ step7_done 폴더를 만든다.
 
 import os
 import shutil
+import stat
 import sys
+import time
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(BASE, "snapshots")
@@ -260,6 +262,29 @@ def cut_recommender(step):
     raise ValueError(f"recommender.py 에서 '{heading}' 을 찾지 못했습니다")
 
 
+def remove_folder(folder):
+    """폴더를 지운다. 윈도우에서 잘 실패하므로 몇 번 다시 시도한다.
+
+    개발 서버(python app.py)를 켜 둔 채로 이 스크립트를 돌리면
+    Flask 의 자동 새로고침 기능이 snapshots 안의 파일까지 들여다보다가
+    '액세스가 거부되었습니다' 오류가 난다. 잠깐 기다렸다 다시 하면 대개 풀린다.
+    """
+    def on_error(func, path, exc):
+        os.chmod(path, stat.S_IWRITE)      # 읽기 전용이면 풀어 준다
+        func(path)
+
+    for attempt in range(5):
+        try:
+            shutil.rmtree(folder, onexc=on_error)
+            return
+        except (PermissionError, OSError):
+            if attempt == 4:
+                raise RuntimeError(
+                    f"'{folder}' 폴더를 지울 수 없습니다.\n"
+                    "  개발 서버(python app.py)가 켜져 있으면 끄고 다시 실행하세요.")
+            time.sleep(0.6)
+
+
 def copy(src_rel, dst_dir, dst_rel=None):
     src = os.path.join(BASE, src_rel)
     dst = os.path.join(dst_dir, dst_rel or src_rel)
@@ -277,7 +302,7 @@ def write(text, dst_dir, rel):
 def build_step(step):
     folder = os.path.join(OUT, f"step{step}_done")
     if os.path.exists(folder):
-        shutil.rmtree(folder)
+        remove_folder(folder)
     os.makedirs(folder)
 
     # ── 어느 단계든 공통으로 들어가는 것 ──
